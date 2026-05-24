@@ -1,0 +1,165 @@
+### ─────────────────────────────────────────
+### STEP 1 — Get presigned upload URL (no auth)
+### Expected: 200 with uploadUrl and objectKey
+### ─────────────────────────────────────────
+POST http://localhost:8080/media/presigned-url
+Content-Type: application/json
+
+{
+  "folder": "test",
+  "fileName": "test-image.jpg",
+  "contentType": "image/jpeg"
+}
+
+> {%
+    client.global.set("uploadUrl", response.body.uploadUrl);
+    client.global.set("objectKey", response.body.objectKey);
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("uploadUrl is present", function() {
+        client.assert(response.body.uploadUrl !== null, "uploadUrl missing");
+    });
+    client.test("objectKey is present", function() {
+        client.assert(response.body.objectKey !== null, "objectKey missing");
+    });
+%}
+
+
+### ─────────────────────────────────────────
+### STEP 2 — Upload a file to S3 using presigned URL
+### Expected: 200 with empty body (S3 returns no body on success)
+### Run STEP 1 first — uploadUrl is auto-filled from it
+### Replace < path/to/any-image.jpg > with a real local file path
+### ─────────────────────────────────────────
+PUT {{uploadUrl}}
+Content-Type: image/jpeg
+
+< /Users/yourname/Desktop/test-image.jpg
+
+> {%
+    client.test("S3 upload succeeded", function() {
+        client.assert(response.status === 200, "Expected 200 from S3");
+    });
+%}
+
+
+### ─────────────────────────────────────────
+### STEP 3 — Request OTP for new shop (first time)
+### Expected: 200 with message "OTP sent to your email"
+### Check your email inbox after running this
+### ─────────────────────────────────────────
+POST http://localhost:8080/auth/shop/request-otp
+Content-Type: application/json
+
+{
+  "fullName": "Ahmed Khan",
+  "email": "kellyalok340@gmail.com",
+  "phone": "03001234567",
+  "shopName": "Khan Auto Works",
+  "description": "Expert car repair and maintenance",
+  "address": "Main Boulevard, Lahore",
+  "latitude": 31.5204,
+  "longitude": 74.3587
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("OTP sent message", function() {
+        client.assert(response.body.message === "OTP sent to your email", "Wrong message");
+    });
+%}
+
+
+### ─────────────────────────────────────────
+### STEP 4 — Request OTP same email again
+### Expected: 400 or 500 with "Email already registered"
+### Wait for STEP 6 to complete first (user gets saved on verify),
+### then run this again after verifying to properly test duplicate check.
+### For now just re-running before verify also hits Redis which is fine.
+### ─────────────────────────────────────────
+POST http://localhost:8080/auth/shop/request-otp
+Content-Type: application/json
+
+{
+  "fullName": "Ahmed Khan",
+  "email": "kellyalok340@gmail.com",
+  "phone": "03001234567",
+  "shopName": "Khan Auto Works",
+  "description": "Expert car repair and maintenance",
+  "address": "Main Boulevard, Lahore",
+  "latitude": 31.5204,
+  "longitude": 74.3587
+}
+
+> {%
+    client.test("Duplicate email rejected", function() {
+        client.assert(response.status !== 200, "Expected non-200 for duplicate email");
+    });
+%}
+
+
+### ─────────────────────────────────────────
+### STEP 5 — Verify OTP with wrong code
+### Expected: error message about invalid OTP
+### ─────────────────────────────────────────
+POST http://localhost:8080/auth/shop/verify-otp
+Content-Type: application/json
+
+{
+  "email": "kellyalok340@gmail.com",
+  "otp": "000000"
+}
+
+> {%
+    client.test("Wrong OTP rejected", function() {
+        client.assert(response.status !== 200, "Expected non-200 for wrong OTP");
+    });
+%}
+
+
+### ─────────────────────────────────────────
+### STEP 6 — Verify OTP with correct code
+### Paste the OTP you received in email
+### Expected: 200 with accessToken, refreshToken, role = REPAIR_SHOP
+### ─────────────────────────────────────────
+POST http://localhost:8080/auth/shop/verify-otp
+Content-Type: application/json
+
+{
+  "email": "kellyalok340@gmail.com",
+  "otp": "576958"
+}
+
+> {%
+    client.global.set("shopToken", response.body.accessToken);
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Role is REPAIR_SHOP", function() {
+        client.assert(response.body.role === "REPAIR_SHOP", "Wrong role");
+    });
+    client.test("accessToken present", function() {
+        client.assert(response.body.accessToken !== null, "Missing accessToken");
+    });
+%}
+
+
+### ─────────────────────────────────────────
+### STEP 7 — Get shop status with JWT
+### Expected: 200 with approvalStatus = "INCOMPLETE"
+### (INCOMPLETE because documents not uploaded yet)
+### ─────────────────────────────────────────
+GET http://localhost:8080/shops/my-status
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJrZWxseWFsb2szNDBAZ21haWwuY29tIiwicm9sZSI6IlNIT1BfT1dORVIiLCJpYXQiOjE3Nzk0MzEzMTAsImV4cCI6MTc3OTUxNzcxMH0.BJdVTLQ7OB38n-gtrWp033dzTGJxCl2G8bStxHTJ9eY
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("approvalStatus is INCOMPLETE", function() {
+        client.assert(response.body.approvalStatus === "INCOMPLETE", "Expected INCOMPLETE");
+    });
+%}

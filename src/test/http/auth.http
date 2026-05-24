@@ -1,0 +1,73 @@
+### 1. Request OTP — new user (creates account + sends OTP)
+POST http://localhost:8080/auth/request-otp
+Content-Type: application/json
+
+{
+  "email": "ipdxd97680@minitts.net"
+}
+
+###
+
+### 2. Verify OTP
+POST http://localhost:8080/auth/verify-otp
+Content-Type: application/json
+
+{
+  "email": "ipdxd97680@minitts.net",
+  "otp": "775314"
+}
+
+###
+
+### 3. Refresh access token — paste refreshToken from step 2 response
+POST http://localhost:8080/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "a93fbf02-18d2-4617-9c9f-b80ed080493c"
+}
+
+###
+
+### 4. Logout — paste accessToken from step 2 response
+POST http://localhost:8080/auth/logout
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJpcGR4ZDk3NjgwQG1pbml0dHMubmV0Iiwicm9sZSI6IkNBUl9PV05FUiIsImlhdCI6MTc3ODQxNDA3NCwiZXhwIjoxNzc4NTAwNDc0fQ.31HQVxFI80UPb3qlnV3jsBsbfai1Rvr2IRxBsrdBpeA
+
+###
+
+### 5. Hit a protected route with no token
+GET http://localhost:8080/test/nearby-shops?lat=31.5204&lng=74.3587
+
+###
+
+### 6. Get a valid access token
+POST http://localhost:8080/auth/request-otp
+Content-Type: application/json
+
+{
+  "email": "odldx49891@minitts.net"
+}
+
+###
+
+### 7. Verify OTP
+POST http://localhost:8080/auth/verify-otp
+Content-Type: application/json
+
+{
+  "email": "odldx49891@minitts.net",
+  "otp": "869961"
+}
+
+###
+
+### 8. Hit the protected route with a valid token
+GET http://localhost:8080/test/nearby-shops?lat=31.5204&lng=74.3587
+
+###
+
+### 9. Hit with an invalid token
+GET http://localhost:8080/test/nearby-shops?lat=31.5204&lng=74.3587
+Authorization: Bearer eyJhbGciOiJIUzI1KiJ9.eyJzdWIiOiJvZGxkeDQ5ODkxQG1pbml0dHMubmV0Iiwicm9sZSI6IkNBUl9PV05FUiIsImlhdCI6MTc3ODQxNzkzOCwiZXhwIjoxNzc4NTA0MzM4fQ.Ei5G-4Gp3OsYPMaJv3bnwG4IsmG673pf9kK9IUk0o_8
+
+

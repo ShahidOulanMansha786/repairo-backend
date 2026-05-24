@@ -1,0 +1,126 @@
+### 1. Login as CAR_OWNER to get JWT
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "kellyalok340@gmail.com"
+}
+
+### 2. Verify OTP (paste OTP from email)
+POST http://localhost:8080/auth/verify-otp
+Content-Type: application/json
+
+{
+  "email": "kellyalok340@gmail.com",
+  "otp": "305348"
+}
+
+### Copy the accessToken from response — use below as {{token}}
+
+### 3. Get presigned URL for image 1
+POST http://localhost:8080/media/presigned-url
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJrZWxseWFsb2szNDBAZ21haWwuY29tIiwicm9sZSI6IkNBUl9PV05FUiIsImlhdCI6MTc3OTUzMDY5NCwiZXhwIjoxNzc5NjE3MDk0fQ.Gdtuh5q01Hn6UEElIIoQcrGs8OvhZF7MqRUVp4swKdo
+
+{
+  "folder": "leads/images",
+  "fileName": "test-image-1.jpg",
+  "contentType": "image/jpeg"
+}
+
+### Copy the key from response — use as imageKey1
+# Upload an actual image to that presigned URL via browser or Postman PUT
+
+### 4. Get presigned URL for image 2
+POST http://localhost:8080/media/presigned-url
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "folder": "leads/images",
+  "fileName": "test-image-2.jpg",
+  "contentType": "image/jpeg"
+}
+
+### Copy the key — use as imageKey2
+
+### 5. POST /leads — create lead
+POST http://localhost:8080/leads
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Engine making noise",
+  "description": "Loud knocking from engine on startup",
+  "carMake": "Toyota",
+  "carModel": "Corolla",
+  "carYear": 2019,
+  "address": "Gulberg III, Lahore, Pakistan",
+  "latitude": 31.5204,
+  "longitude": 74.3587,
+  "imageKeys": [
+    "leads/images/YOUR_IMAGE_KEY_1",
+    "leads/images/YOUR_IMAGE_KEY_2"
+  ]
+}
+
+###
+# Verify: 201 returned
+# Verify: response body has id, status=OPEN, imageUrls (2 pre-signed URLs)
+# Copy lead id — use as {{leadId}}
+
+### 6. Verify in DB
+# Run in IntelliJ DB tool:
+# SELECT * FROM leads WHERE id = {{leadId}};
+# → status should be OPEN
+# SELECT * FROM lead_images WHERE lead_id = {{leadId}};
+# → should return 2 rows
+
+### 7. GET /leads/my
+GET http://localhost:8080/leads/my
+Authorization: Bearer {{token}}
+
+# Verify: list returned containing the new lead
+
+### 8. GET /leads/{leadId}
+GET http://localhost:8080/leads/{{leadId}}
+Authorization: Bearer {{token}}
+
+# Verify: lead returned with imageUrls array
+# Copy one imageUrl and open in browser → image should load
+
+### 9. PATCH /leads/{leadId}/cancel
+PATCH http://localhost:8080/leads/{{leadId}}/cancel
+Authorization: Bearer {{token}}
+
+# Verify: status = CANCELLED in response
+
+### 10. Try cancelling again — should fail
+PATCH http://localhost:8080/leads/{{leadId}}/cancel
+Authorization: Bearer {{token}}
+
+# Verify: error returned "Only open leads can be cancelled"
+
+### 11. Login as ADMIN
+POST http://localhost:8080/admin/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@carrepair.com",
+  "password": "yourAdminPassword"
+}
+
+# Copy accessToken — use as {{adminToken}}
+
+### 12. GET /admin/leads paginated
+GET http://localhost:8080/admin/leads?page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+# Verify: paginated response with content array
+# Verify: totalPages, totalElements present
+
+### 13. GET /admin/leads filtered by OPEN
+GET http://localhost:8080/admin/leads?page=0&size=10&status=OPEN
+Authorization: Bearer {{adminToken}}
+
+# Verify: all returned leads have status=OPEN

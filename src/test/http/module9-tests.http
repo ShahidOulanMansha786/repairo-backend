@@ -1,0 +1,121 @@
+### ============================================================
+### VARIABLES — fill these in before running
+### ============================================================
+
+@baseUrl = http://localhost:8080
+@carOwnerToken = PASTE_CAR_OWNER_JWT_HERE
+@shopToken = PASTE_SHOP_JWT_HERE
+@leadId = 1
+@quoteId = 1
+
+### ============================================================
+### NEARBY LEADS
+### ============================================================
+
+### 1. Get nearby leads (REPAIR_SHOP)
+GET {{baseUrl}}/shops/leads/nearby
+Authorization: Bearer {{shopToken}}
+
+### ============================================================
+### SUBMIT QUOTE
+### ============================================================
+
+### 2. Submit a quote (REPAIR_SHOP)
+POST {{baseUrl}}/quotes
+Authorization: Bearer {{shopToken}}
+Content-Type: application/json
+
+{
+  "leadId": {{leadId}},
+  "price": 5500.00,
+  "message": "I can fix this within 2 days"
+}
+
+### 3. Submit duplicate quote on same lead (should fail)
+POST {{baseUrl}}/quotes
+Authorization: Bearer {{shopToken}}
+Content-Type: application/json
+
+{
+  "leadId": {{leadId}},
+  "price": 4000.00,
+  "message": "Trying again"
+}
+
+### ============================================================
+### GET QUOTES
+### ============================================================
+
+### 4. Get quotes for lead (CAR_OWNER)
+GET {{baseUrl}}/leads/{{leadId}}/quotes
+Authorization: Bearer {{carOwnerToken}}
+
+### ============================================================
+### ACCEPT QUOTE
+### ============================================================
+
+### 5. Accept a quote (CAR_OWNER)
+POST {{baseUrl}}/leads/{{leadId}}/quotes/{{quoteId}}/accept
+Authorization: Bearer {{carOwnerToken}}
+
+### 6. Try accepting again on same lead (should fail — lead is CLOSED)
+POST {{baseUrl}}/leads/{{leadId}}/quotes/{{quoteId}}/accept
+Authorization: Bearer {{carOwnerToken}}
+
+### ============================================================
+### SUBMIT QUOTE ON CLOSED LEAD
+### ============================================================
+
+### 7. Submit quote on closed lead (should fail)
+POST {{baseUrl}}/quotes
+Authorization: Bearer {{shopToken}}
+Content-Type: application/json
+
+{
+  "leadId": {{leadId}},
+  "price": 3000.00,
+  "message": "Trying to quote closed lead"
+}
+
+### ============================================================
+### DB VERIFICATION QUERIES
+### (run these in your PostgreSQL client)
+### ============================================================
+### SELECT * FROM quotes WHERE lead_id = 1;
+### → new row with status = PENDING
+###
+### SELECT * FROM quotes WHERE lead_id = 1;
+### → accepted quote: status = ACCEPTED
+### → all other quotes: status = REJECTED
+###
+### SELECT status FROM leads WHERE id = 1;
+### → status = CLOSED
+### ============================================================
+
+### ============================================================
+### WEBSOCKET TEST
+### ============================================================
+### Open https://www.piesocket.com/websocket-tester
+### or use browser console:
+###
+### Connect to:
+### ws://localhost:8080/ws/websocket
+###
+### After connecting send STOMP CONNECT frame:
+### CONNECT
+### Authorization:Bearer YOUR_JWT_HERE
+### accept-version:1.2
+### heart-beat:0,0
+###
+### (blank line then null byte \0 to terminate)
+###
+### Expected: CONNECTED frame back from server
+###
+### Then subscribe:
+### SUBSCRIBE
+### id:sub-0
+### destination:/topic/leads/1/quotes
+###
+### Then fire request #2 (submit quote)
+### → quote JSON should appear in WS tester
+### ============================================================

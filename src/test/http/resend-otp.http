@@ -1,0 +1,87 @@
+### ─────────────────────────────────────────────
+### RESEND OTP TEST CASES
+### ─────────────────────────────────────────────
+
+
+### ✅ TEST 1 — Happy Path (Signup Flow)
+### Setup: First call /signup to create a pending session, then resend
+### Expected: 200 — "A new OTP has been sent to your email."
+
+POST http://localhost:8080/auth/resend-otp
+Content-Type: application/json
+
+{
+  "email": "shahidoulan@gmail.com"
+}
+
+
+### ─────────────────────────────────────────────
+
+
+### ✅ TEST 2 — Happy Path (Login Flow)
+### Setup: First call /login to create an OTP session, then resend
+### Expected: 200 — "A new OTP has been sent to your email."
+
+POST http://localhost:8080/auth/resend-otp
+Content-Type: application/json
+
+{
+  "email": "shahidoulan@gmail.com"
+}
+
+
+### ─────────────────────────────────────────────
+
+
+### ❌ TEST 3 — No Active Session
+### Setup: Use an email that never called /signup or /login
+### Expected: 400/500 — "No active session found for this email. Please signup or login again."
+
+POST http://localhost:8080/auth/resend-otp
+Content-Type: application/json
+
+{
+  "email": "ghost@gmail.com"
+}
+
+
+### ─────────────────────────────────────────────
+
+
+### ❌ TEST 4 — Rate Limit Exceeded
+### Setup: Run this request 4 times back to back on the same email
+### First 3 → 200 OK
+### 4th attempt → Expected: 429 — "Too many resend-otp attempts. Please try again after 10 minutes."
+
+POST http://localhost:8080/auth/resend-otp
+Content-Type: application/json
+
+{
+  "email": "shahidoulan@gmail.com"
+}
+
+
+### ─────────────────────────────────────────────
+
+
+### ❌ TEST 5 — Empty Email
+### Expected: 400 or validation error
+
+POST http://localhost:8080/auth/resend-otp
+Content-Type: application/json
+
+{
+  "email": ""
+}
+
+
+### ─────────────────────────────────────────────
+
+
+### ❌ TEST 6 — Missing Email Field Entirely
+### Expected: 400 or validation error
+
+POST http://localhost:8080/auth/resend-otp
+Content-Type: application/json
+
+{}

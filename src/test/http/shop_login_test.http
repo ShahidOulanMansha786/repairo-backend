@@ -1,0 +1,33 @@
+### SHOP LOGIN — request OTP (email not found)
+POST http://localhost:8080/auth/shop/login/request-otp
+Content-Type: application/json
+
+{
+  "email": "notexist@gmail.com"
+}
+
+### SHOP LOGIN — request OTP (correct email)
+POST http://localhost:8080/auth/shop/login/request-otp
+Content-Type: application/json
+
+{
+  "email": "alokclaw65@gmail.com"
+}
+
+### SHOP LOGIN — verify wrong OTP
+POST http://localhost:8080/auth/shop/login/verify-otp
+Content-Type: application/json
+
+{
+  "email": "alokclaw65@gmail.com",
+  "otp": "000000"
+}
+
+### SHOP LOGIN — verify correct OTP
+POST http://localhost:8080/auth/shop/login/verify-otp
+Content-Type: application/json
+
+{
+  "email": "alokclaw65@gmail.com",
+  "otp": "114413"
+}

@@ -1,0 +1,57 @@
+### Signup with new email
+POST http://localhost:8080/auth/signup
+Content-Type: application/json
+
+{
+  "fullName": "John Doe",
+  "email": "shahidoulanmansha@gmail.com",
+  "phone": "03001234567",
+  "role": "CAR_OWNER"
+}
+
+###  Signup with same email again — expect 400
+POST http://localhost:8080/auth/signup
+Content-Type: application/json
+
+{
+  "fullName": "John Doe",
+  "email": "shahidoulan@gmail.com",
+  "phone": "03001234567",
+  "role": "CAR_OWNER"
+}
+
+### Signup with ADMIN role — expect 400
+POST http://localhost:8080/auth/signup
+Content-Type: application/json
+
+{
+  "fullName": "Hacker",
+  "email": "hacker@gmail.com",
+  "phone": "03001234567",
+  "role": "ADMIN"
+}
+
+### Login with registered email
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "shahidoulan@gmail.com"
+}
+
+### Login with unregistered email — expect 400
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "notexist@gmail.com"
+}
+
+### Verify OTP — paste the OTP you received in Gmail
+POST http://localhost:8080/auth/verify-otp
+Content-Type: application/json
+
+{
+  "email": "shahidoulan@gmail.com",
+  "otp": "174725"
+}

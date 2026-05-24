@@ -1,0 +1,26 @@
+### Correct credentials
+POST http://localhost:8080/admin/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@carrepair.com",
+  "password": "alok"
+}
+
+### Wrong password
+POST http://localhost:8080/admin/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@carrepair.com",
+  "password": "wrongpassword"
+}
+
+### Non-admin email
+POST http://localhost:8080/admin/auth/login
+Content-Type: application/json
+
+{
+  "email": "someuser@carrepair.com",
+  "password": "anypassword"
+}

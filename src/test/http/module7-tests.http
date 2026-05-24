@@ -1,0 +1,47 @@
+POST http://localhost:8080/admin/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@carrepair.com",
+  "password": "alok"
+}
+
+###
+
+GET http://localhost:8080/admin/shops/pending?page=0&size=10
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBjYXJyZXBhaXIuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzc5NDg3Nzc2LCJleHAiOjE3Nzk1NzQxNzZ9.GQUffbT7TnFh5UrbEw4-W8XC4s4fhHwBLvEBOGuaZ98
+
+###
+
+GET http://localhost:8080/admin/shops?page=0&size=10
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBjYXJyZXBhaXIuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzc5NDg3Nzc2LCJleHAiOjE3Nzk1NzQxNzZ9.GQUffbT7TnFh5UrbEw4-W8XC4s4fhHwBLvEBOGuaZ98
+
+###
+
+GET http://localhost:8080/admin/shops/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBjYXJyZXBhaXIuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzc5NDg3Nzc2LCJleHAiOjE3Nzk1NzQxNzZ9.GQUffbT7TnFh5UrbEw4-W8XC4s4fhHwBLvEBOGuaZ98
+
+###
+
+POST http://localhost:8080/admin/shops/1/approve
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBjYXJyZXBhaXIuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzc5NDg3Nzc2LCJleHAiOjE3Nzk1NzQxNzZ9.GQUffbT7TnFh5UrbEw4-W8XC4s4fhHwBLvEBOGuaZ98
+
+###
+
+POST http://localhost:8080/admin/shops/2/reject
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBjYXJyZXBhaXIuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzc5NDg3Nzc2LCJleHAiOjE3Nzk1NzQxNzZ9.GQUffbT7TnFh5UrbEw4-W8XC4s4fhHwBLvEBOGuaZ98
+Content-Type: application/json
+
+{
+  "rejectionReason": "Documents are not clear"
+}
+
+###
+
+POST http://localhost:8080/auth/shop/request-otp
+Content-Type: application/json
+
+{
+  "email": "alokclaw65@gmail.com"
+}
+
