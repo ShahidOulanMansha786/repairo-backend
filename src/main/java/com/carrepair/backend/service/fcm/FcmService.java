@@ -99,4 +99,16 @@ public class FcmService {
                 Map.of("type", "NEW_MESSAGE", "channelId", channelId)
         );
     }
+
+    public void sendAccountBlockedNotification(String fcmToken) {
+        sendNotification(fcmToken, "Account Blocked",
+                "Your account has been blocked. Please contact support.",
+                Map.of("type", "ACCOUNT_BLOCKED"));
+    }
+
+    public void sendAccountUnblockedNotification(String fcmToken) {
+        sendNotification(fcmToken, "Account Unblocked",
+                "Your account has been unblocked. You can now use the app.",
+                Map.of("type", "ACCOUNT_UNBLOCKED"));
+    }
 }

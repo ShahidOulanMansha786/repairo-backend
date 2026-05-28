@@ -7,8 +7,10 @@ import com.carrepair.backend.dto.request.quote.SubmitQuoteRequestDto;
 import com.carrepair.backend.dto.response.quote.ChatChannelResponseDto;
 import com.carrepair.backend.dto.response.quote.QuoteResponseDto;
 import com.carrepair.backend.entity.*;
+import com.carrepair.backend.enums.ActivityType;
 import com.carrepair.backend.repository.*;
 import com.carrepair.backend.repository.RepairShopRepository;
+import com.carrepair.backend.service.ActivityLogService;
 import com.carrepair.backend.service.ApprovalStatus;
 import com.carrepair.backend.service.S3Service;
 import com.carrepair.backend.service.chat.FirestoreChatService;
@@ -37,6 +39,7 @@ public class QuoteService {
     private final SimpMessagingTemplate messagingTemplate;
     private final FcmService fcmService;
     private final FirestoreChatService firestoreChatService;
+    private final ActivityLogService activityLogService;
 
 
 
@@ -70,6 +73,9 @@ public class QuoteService {
                 .build();
 
         Quote savedQuote = quoteRepository.save(quote);
+
+        activityLogService.log(shop.getUser().getId(), ActivityType.QUOTE_SUBMITTED,
+                "Submitted a quote for lead #" + lead.getId(), savedQuote.getId());
 
         String shopLogoUrl = null;
         if (shop.getLogoUrl() != null) {
@@ -209,6 +215,9 @@ public class QuoteService {
         if (acceptedShop.getLogoUrl() != null) {
             shopLogoUrl = s3Service.generateDownloadPresignedUrl(acceptedShop.getLogoUrl());
         }
+
+        activityLogService.log(lead.getCarOwner().getId(), ActivityType.QUOTE_ACCEPTED,
+                "Accepted a quote for lead: " + lead.getTitle(), quote.getId());
 
         return QuoteResponseDto.builder()
                 .id(quote.getId())

@@ -20,7 +20,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -135,9 +137,14 @@ public class RepairShopService {
                 .build());
     }
 
-    public Page<ShopSummaryDto> getAllShops(int page, int size) {
+    public Page<ShopSummaryDto> getAllShops(ApprovalStatus status, String search, int page, int size) {
+
+        String searchParam = (search == null) ? "" : search.trim();
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<RepairShop> shops = repairShopRepository.findAll(pageable);
+
+        Page<RepairShop> shops = repairShopRepository.findAllWithFilters(status, searchParam, pageable);
+
         return shops.map(shop -> ShopSummaryDto.builder()
                 .shopId(shop.getId())
                 .shopName(shop.getShopName())
@@ -148,6 +155,15 @@ public class RepairShopService {
                 .approvalStatus(shop.getApprovalStatus().name())
                 .createdAt(shop.getCreatedAt())
                 .build());
+    }
+
+
+    public Map<String, Long> getShopStatusCounts() {
+        Map<String, Long> counts = new HashMap<>();
+        counts.put("pending", repairShopRepository.countByApprovalStatus(ApprovalStatus.PENDING));
+        counts.put("approved", repairShopRepository.countByApprovalStatus(ApprovalStatus.APPROVED));
+        counts.put("rejected", repairShopRepository.countByApprovalStatus(ApprovalStatus.REJECTED));
+        return counts;
     }
 
     public ShopDetailDto getShopDetail(Long shopId) {

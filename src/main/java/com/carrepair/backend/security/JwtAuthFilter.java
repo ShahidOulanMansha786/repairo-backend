@@ -1,6 +1,8 @@
 package com.carrepair.backend.security;
 
 
+import com.carrepair.backend.entity.User;
+import com.carrepair.backend.repository.UserRepository;
 import com.carrepair.backend.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,6 +27,7 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserRepository  userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -53,6 +56,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String role = jwtService.extractRole(token);
 
+        User user = userRepository.findByEmail(email).orElse(null);
+
+        if (user == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (user.isBlocked()) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"message\": \"ACCOUNT_BLOCKED\"}");
+            return;
+        }
+
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
             SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
@@ -63,7 +80,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                             null,
                             List.of(authority)
                     );
-            log.info("JWT filter - email: {}, role: {}", email, role);
 
             authToken.setDetails(
                     new WebAuthenticationDetailsSource().buildDetails(request)
@@ -74,4 +90,5 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
 }

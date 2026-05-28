@@ -8,10 +8,12 @@ import com.carrepair.backend.entity.Lead;
 import com.carrepair.backend.entity.LeadImage;
 import com.carrepair.backend.entity.LeadStatus;
 import com.carrepair.backend.entity.Role;
+import com.carrepair.backend.enums.ActivityType;
 import com.carrepair.backend.repository.LeadImageRepository;
 import com.carrepair.backend.repository.LeadRepository;
 import com.carrepair.backend.repository.RepairShopRepository;
 import com.carrepair.backend.repository.UserRepository;
+import com.carrepair.backend.service.ActivityLogService;
 import com.carrepair.backend.service.fcm.FcmService;
 import com.carrepair.backend.service.S3Service;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +41,7 @@ public class LeadService {
     private final RepairShopRepository repairShopRepository;
     private final FcmService fcmService;
     private final S3Service s3Service;
+    private final ActivityLogService  activityLogService;
 
     @Transactional
     public LeadResponseDto createLead(Long carOwnerId, CreateLeadRequestDto dto) {
@@ -90,6 +93,9 @@ public class LeadService {
                 dto.getImageKeys().stream()
                         .map(s3Service::generateDownloadPresignedUrl)
                         .collect(Collectors.toList());
+
+        activityLogService.log(carOwnerId, ActivityType.LEAD_POSTED,
+                "Posted a lead: " + lead.getTitle(), lead.getId());
 
         return LeadResponseDto.builder()
                 .id(lead.getId())
@@ -189,6 +195,9 @@ public class LeadService {
                 .map(image -> s3Service.generateDownloadPresignedUrl(image.getImageUrl()))
                 .collect(Collectors.toList());
 
+        activityLogService.log(lead.getCarOwner().getId(), ActivityType.LEAD_CANCELLED,
+                "Cancelled lead: " + lead.getTitle(), lead.getId());
+
         return LeadResponseDto.builder()
                 .id(lead.getId())
                 .title(lead.getTitle())
@@ -204,18 +213,22 @@ public class LeadService {
                 .build();
     }
 
-    public Page<AdminLeadResponseDto> getAllLeadsForAdmin(int page, int size, String status) {
+    public Page<AdminLeadResponseDto> getAllLeadsForAdmin(
+            int page, int size, String status, String search) {
 
-        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        PageRequest pageRequest = PageRequest.of(page, size);
 
-        Page<Lead> leads;
+        LeadStatus leadStatus = (status == null || status.isEmpty())
+                ? null
+                : LeadStatus.valueOf(status.toUpperCase());
 
-        if (status == null || status.isEmpty()) {
-            leads = leadRepository.findAll(pageRequest);
-        } else {
-            LeadStatus leadStatus = LeadStatus.valueOf(status.toUpperCase());
-            leads = leadRepository.findAllByStatus(leadStatus, pageRequest);
-        }
+        String trimmedSearch = (search == null || search.isBlank())
+                ? null
+                : search.trim();
+
+        Page<Lead> leads = leadRepository.findAllWithFilters(
+                leadStatus, trimmedSearch, pageRequest
+        );
 
         return leads.map(lead -> AdminLeadResponseDto.builder()
                 .id(lead.getId())

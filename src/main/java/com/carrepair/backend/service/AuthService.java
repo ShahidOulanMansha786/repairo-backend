@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -145,6 +146,10 @@ public class AuthService {
                     return savedUser;
                 });
 
+        if (user.isBlocked()) {
+            throw new RuntimeException("ACCOUNT_BLOCKED");
+        }
+
         String accessToken = jwtService.generateAccessToken(user);
         String refreshTokenValue = jwtService.generateRefreshToken();
 
@@ -234,12 +239,14 @@ public class AuthService {
             throw new RuntimeException("Disposable email addresses are not allowed.");
         }
 
-        if (userRepository.existsByEmail(dto.getEmail())) {
-            log.info("User with email {} already exists", dto.getEmail());
-            throw new RuntimeException("Email already registered.");
-        }
-
-        if(userRepository.existsByPhone(dto.getPhone())) {
+        Optional<User> existingUser = userRepository.findByEmail(dto.getEmail());
+        if (existingUser.isPresent()) {
+            RepairShop existingShop = repairShopRepository.findByUserId(existingUser.get().getId())
+                    .orElseThrow(() -> new RuntimeException("Email already registered."));
+            if (existingShop.getApprovalStatus() != ApprovalStatus.REJECTED) {
+                throw new RuntimeException("Email already registered.");
+            }
+        } else if (userRepository.existsByPhone(dto.getPhone())) {
             throw new RuntimeException("Phone number already registered.");
         }
 
@@ -271,35 +278,64 @@ public class AuthService {
         ObjectMapper mapper = new ObjectMapper();
         PendingShopRegistrationDto pending = mapper.convertValue(raw, PendingShopRegistrationDto.class);
 
-        User user = User.builder()
-                .fullName(pending.getFullName())
-                .email(pending.getEmail())
-                .phone(pending.getPhone())
-                .role(Role.SHOP_OWNER)
-                .isActive(true)
-                .createdAt(LocalDateTime.now())
-                .build();
-        user = userRepository.save(user);
-
         Point location = new GeometryFactory(new PrecisionModel(), 4326)
                 .createPoint(new Coordinate(pending.getLongitude(), pending.getLatitude()));
 
-        RepairShop shop = RepairShop.builder()
-                .user(user)
-                .shopName(pending.getShopName())
-                .description(pending.getDescription())
-                .phone(pending.getPhone())
-                .address(pending.getAddress())
-                .location(location)
-                .approvalStatus(ApprovalStatus.INCOMPLETE)
-                .isVerified(false)
-                .isActive(true)
-                .logoUrl(null)
-                .cnicUrl(null)
-                .businessDocUrl(null)
-                .createdAt(LocalDateTime.now())
-                .build();
-        repairShopRepository.save(shop);
+        Optional<User> existingUserOpt = userRepository.findByEmail(pending.getEmail());
+        User user;
+
+        if (existingUserOpt.isPresent()) {
+            user = existingUserOpt.get();
+            user.setFullName(pending.getFullName());
+            user.setPhone(pending.getPhone());
+            user = userRepository.save(user);
+
+            RepairShop existingShop = repairShopRepository.findByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Shop not found."));
+            existingShop.setShopName(pending.getShopName());
+            existingShop.setDescription(pending.getDescription());
+            existingShop.setPhone(pending.getPhone());
+            existingShop.setAddress(pending.getAddress());
+            existingShop.setLocation(location);
+            existingShop.setApprovalStatus(ApprovalStatus.INCOMPLETE);
+            existingShop.setRejectionReason(null);
+            existingShop.setRejectedAt(null);
+            existingShop.setLogoUrl(null);
+            existingShop.setCnicUrl(null);
+            existingShop.setBusinessDocUrl(null);
+            repairShopRepository.save(existingShop);
+        } else {
+            user = User.builder()
+                    .fullName(pending.getFullName())
+                    .email(pending.getEmail())
+                    .phone(pending.getPhone())
+                    .role(Role.SHOP_OWNER)
+                    .isActive(true)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            user = userRepository.save(user);
+
+            RepairShop shop = RepairShop.builder()
+                    .user(user)
+                    .shopName(pending.getShopName())
+                    .description(pending.getDescription())
+                    .phone(pending.getPhone())
+                    .address(pending.getAddress())
+                    .location(location)
+                    .approvalStatus(ApprovalStatus.INCOMPLETE)
+                    .isVerified(false)
+                    .isActive(true)
+                    .logoUrl(null)
+                    .cnicUrl(null)
+                    .businessDocUrl(null)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            repairShopRepository.save(shop);
+        }
+
+        if (user.isBlocked()) {
+            throw new RuntimeException("ACCOUNT_BLOCKED");
+        }
 
         String accessToken = jwtService.generateAccessToken(user);
         String refreshTokenValue = jwtService.generateRefreshToken();

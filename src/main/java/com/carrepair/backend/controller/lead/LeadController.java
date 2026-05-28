@@ -33,7 +33,6 @@ public class LeadController {
         Long userId = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"))
                 .getId();
-
         LeadResponseDto response = leadService.createLead(userId, dto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
