@@ -25,7 +25,7 @@ public class LeadExpiryJob {
                 LeadStatus.OPEN, LocalDateTime.now());
 
         for (Lead lead : expiredLeads) {
-            lead.setStatus(LeadStatus.CANCELLED);
+            lead.setStatus(LeadStatus.EXPIRED);
             leadRepository.save(lead);
         }
 

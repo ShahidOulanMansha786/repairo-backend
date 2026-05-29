@@ -172,7 +172,8 @@ public class QuoteService {
         otherPendingQuotes.forEach(q -> q.setStatus(QuoteStatus.REJECTED));
         quoteRepository.saveAll(otherPendingQuotes);
 
-        lead.setStatus(LeadStatus.CLOSED);
+        lead.setStatus(LeadStatus.IN_PROGRESS);
+        lead.setInProgressAt(LocalDateTime.now());
         leadRepository.save(lead);
 
         RepairShop acceptedShop = quote.getRepairShop();

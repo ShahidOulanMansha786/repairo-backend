@@ -1,7 +1,6 @@
 package com.carrepair.backend.entity;
 
 public enum LeadStatus {
-    OPEN,
-    CLOSED,
-    CANCELLED
+    OPEN, CLOSED, IN_PROGRESS,
+    COMPLETED, CANCELLED, EXPIRED, DISPUTED
 }

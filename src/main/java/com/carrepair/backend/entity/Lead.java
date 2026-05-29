@@ -58,6 +58,20 @@ public class Lead {
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
+    @Builder.Default
+    @Column(name = "shop_marked_done", nullable = false)
+    private Boolean shopMarkedDone = false;
+
+    @Builder.Default
+    @Column(name = "owner_marked_satisfied", nullable = false)
+    private Boolean ownerMarkedSatisfied = false;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    @Column(name = "in_progress_at")
+    private LocalDateTime inProgressAt;
+
     @JsonIgnore
     @OneToMany(mappedBy = "lead", cascade = CascadeType.ALL)
     private List<LeadImage> images;

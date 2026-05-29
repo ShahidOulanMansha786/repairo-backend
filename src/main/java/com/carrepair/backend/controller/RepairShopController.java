@@ -1,6 +1,7 @@
 package com.carrepair.backend.controller;
 
 
+import com.carrepair.backend.dto.request.dispute.ActiveJobResponseDto;
 import com.carrepair.backend.dto.request.repairshop.ShopApprovalRequestDto;
 import com.carrepair.backend.dto.request.repairshop.ShopDocumentUploadDto;
 import com.carrepair.backend.dto.response.lead.NearbyLeadResponseDto;
@@ -64,6 +65,14 @@ public class RepairShopController {
                 repairShopService.getNearbyLeads(user.getId());
 
         return ResponseEntity.ok(leads);
+    }
+
+    @GetMapping("/repair-shop/my-jobs")
+    @PreAuthorize("hasAuthority('SHOP_OWNER')")
+    public ResponseEntity<List<ActiveJobResponseDto>> getMyActiveJobs() {
+        String email = (String) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+        return ResponseEntity.ok(repairShopService.getMyActiveJobs(email));
     }
 
 

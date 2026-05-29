@@ -1,13 +1,13 @@
 package com.carrepair.backend.service;
 
+import com.carrepair.backend.dto.request.dispute.ActiveJobResponseDto;
 import com.carrepair.backend.dto.request.repairshop.ShopDocumentUploadDto;
 import com.carrepair.backend.dto.response.lead.NearbyLeadResponseDto;
 import com.carrepair.backend.dto.response.repairshop.ShopApprovalResponseDto;
 import com.carrepair.backend.dto.response.repairshop.ShopDetailDto;
 import com.carrepair.backend.dto.response.repairshop.ShopStatusResponseDto;
 import com.carrepair.backend.dto.response.repairshop.ShopSummaryDto;
-import com.carrepair.backend.entity.RepairShop;
-import com.carrepair.backend.entity.User;
+import com.carrepair.backend.entity.*;
 import com.carrepair.backend.repository.*;
 import com.carrepair.backend.service.fcm.FcmService;
 import jakarta.transaction.Transactional;
@@ -35,6 +35,7 @@ public class RepairShopService {
     private final LeadImageRepository leadImageRepository;
     private final LeadRepository leadRepository;
     private final QuoteRepository  quoteRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public ShopStatusResponseDto uploadDocuments(Long userId, ShopDocumentUploadDto dto) {
@@ -239,6 +240,51 @@ public class RepairShopService {
                     .distanceMeters(lead.getDistanceMeters())
                     .hasQuoted(hasQuoted)
                     .build();
+        }).collect(Collectors.toList());
+    }
+
+    public List<ActiveJobResponseDto> getMyActiveJobs(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        RepairShop shop = repairShopRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Repair shop not found"));
+
+        List<Quote> acceptedQuotes = quoteRepository
+                .findAllByRepairShopIdAndStatus(shop.getId(), QuoteStatus.ACCEPTED);
+
+        return acceptedQuotes.stream().map(quote -> {
+            Lead lead = leadRepository.findById(quote.getLead().getId())
+                    .orElseThrow(() -> new RuntimeException("Lead not found"));
+
+            User carOwner = userRepository.findById(lead.getCarOwner().getId())
+                    .orElseThrow(() -> new RuntimeException("Car owner not found"));
+
+            List<String> imageUrls = leadImageRepository
+                    .findByLeadId(lead.getId())
+                    .stream()
+                    .map(img -> s3Service.generateDownloadPresignedUrl(img.getImageUrl()))
+                    .collect(Collectors.toList());
+
+            return ActiveJobResponseDto.builder()
+                    .leadId(lead.getId())
+                    .quoteId(quote.getId())
+                    .title(lead.getTitle())
+                    .description(lead.getDescription())
+                    .carMake(lead.getCarMake())
+                    .carModel(lead.getCarModel())
+                    .carYear(lead.getCarYear())
+                    .address(lead.getAddress())
+                    .status(lead.getStatus().name())
+                    .shopMarkedDone(lead.getShopMarkedDone())
+                    .ownerMarkedSatisfied(lead.getOwnerMarkedSatisfied())
+                    .inProgressAt(lead.getInProgressAt() != null
+                            ? lead.getInProgressAt().toString() : null)
+                    .price(quote.getPrice())
+                    .imageUrls(imageUrls)
+                    .carOwnerName(carOwner.getFullName())
+                    .build();
+
         }).collect(Collectors.toList());
     }
 }

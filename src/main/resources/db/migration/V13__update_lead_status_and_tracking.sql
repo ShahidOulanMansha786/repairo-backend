@@ -1,0 +1,5 @@
+ALTER TABLE leads
+    ADD COLUMN shop_marked_done BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN owner_marked_satisfied BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN completed_at TIMESTAMP NULL,
+    ADD COLUMN in_progress_at TIMESTAMP NULL;

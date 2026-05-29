@@ -111,4 +111,44 @@ public class FcmService {
                 "Your account has been unblocked. You can now use the app.",
                 Map.of("type", "ACCOUNT_UNBLOCKED"));
     }
+
+    public void sendShopMarkedDoneNotification(String token, String leadTitle) {
+        sendNotification(
+                token,
+                "Shop Has Finished Work",
+                leadTitle + " is ready for review",
+                Map.of("type", "SHOP_MARKED_DONE")
+        );
+    }
+
+    public void sendJobCompletedNotification(String token, String leadTitle) {
+        sendNotification(
+                token,
+                "Job Completed!",
+                leadTitle + " has been completed",
+                Map.of("type", "JOB_COMPLETED")
+        );
+    }
+
+    public void sendDisputeRaisedNotification(String token, String leadTitle) {
+        sendNotification(
+                token,
+                "Dispute Raised",
+                "A dispute has been raised for: " + leadTitle,
+                Map.of("type", "DISPUTE_RAISED")
+        );
+    }
+
+    public void sendDisputeResolvedNotification(String token, String resolution) {
+        String body = resolution.equals("RESOLVED_SHOP")
+                ? "Decision: Payment released to shop"
+                : "Decision: Refund issued to owner";
+
+        sendNotification(
+                token,
+                "Dispute Resolved",
+                body,
+                Map.of("type", "DISPUTE_RESOLVED")
+        );
+    }
 }

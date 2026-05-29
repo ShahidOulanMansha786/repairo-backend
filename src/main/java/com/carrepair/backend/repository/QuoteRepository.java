@@ -41,4 +41,5 @@ public interface QuoteRepository extends JpaRepository<Quote, Long> {
             @Param("end") LocalDateTime end
     );
 
+    List<Quote> findAllByRepairShopIdAndStatus(Long id, QuoteStatus quoteStatus);
 }

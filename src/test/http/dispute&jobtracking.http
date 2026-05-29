@@ -1,0 +1,37 @@
+
+### 1. Raise Dispute (CAR_OWNER JWT)
+POST http:loc/leads/{{leadId}}/dispute
+Authorization: Bearer {{carOwnerToken}}
+Content-Type: application/json
+
+{
+  "reason": "Shop did not fix the issue properly"
+}
+
+### Expected: 201, lead status = DISPUTED, FCM sent to shop + admin
+
+### 2. Get Dispute by Lead (any party)
+GET {{baseUrl}}/leads/{{leadId}}/dispute
+Authorization: Bearer {{carOwnerToken}}
+
+### Expected: 200, status = OPEN, raisedByName filled
+
+### 3. Get All Disputes (ADMIN JWT)
+GET {{baseUrl}}/admin/disputes
+Authorization: Bearer {{adminToken}}
+
+### Expected: 200, list with our dispute
+
+### 4. Resolve Dispute (ADMIN JWT)
+POST {{baseUrl}}/admin/disputes/{{disputeId}}/resolve
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "resolution": "RESOLVED_SHOP",
+  "adminNote": "Shop provided valid proof of work"
+}
+
+### Expected: 200, status = RESOLVED_SHOP
+###           lead status = COMPLETED
+###           FCM sent to both parties

@@ -36,7 +36,7 @@ POST http://localhost:8080/auth/login
 Content-Type: application/json
 
 {
-  "email": "shahidoulan@gmail.com"
+  "email": "kellyalok340@gmail.com"
 }
 
 ### Login with unregistered email — expect 400
@@ -52,6 +52,6 @@ POST http://localhost:8080/auth/verify-otp
 Content-Type: application/json
 
 {
-  "email": "shahidoulan@gmail.com",
-  "otp": "174725"
+  "email": "kellyalok340@gmail.com",
+  "otp": "677150"
 }
