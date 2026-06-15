@@ -30,8 +30,8 @@ Repairo is a car repair marketplace where car owners post repair leads and nearb
 
 ```mermaid
 graph TD
-    Android[Android App] -->|REST + WebSocket| Backend[Spring Boot Backend]
-    AdminPanel[Next.js Admin Panel] -->|REST| Backend
+    Android[Android App] -->|REST APIS + WebSocket| Backend[Spring Boot Backend]
+    AdminPanel[Next.js Admin Panel] -->|REST APIS| Backend
     Backend -->|JPA| PostgreSQL[(PostgreSQL + PostGIS)]
     Backend -->|Cache + OTP| Redis[(Redis)]
     Backend -->|Notifications| FCM[Firebase FCM]
@@ -68,10 +68,10 @@ sequenceDiagram
     BE->>CO: Mock payment URL
 
     CO->>BE: GET /api/payments/{paymentId}/mock-pay
-    BE->>BE: Escrow status → FUNDS_RECEIVED
+    BE->>BE: Escrow status = FUNDS_RECEIVED
 
     CO->>BE: POST /api/payments/{paymentId}/release-immediately
-    BE->>BE: Escrow status → RELEASED_TO_SHOP
+    BE->>BE: Escrow status = RELEASED_TO_SHOP
 ```
 
 ---
@@ -105,7 +105,7 @@ sequenceDiagram
 
     BE-->>SO: FCM — quote accepted
     SO->>BE: POST /leads/{leadId}/mark-work-done
-    BE->>BE: Job progress updated → RELEASED_TO_SHOP
+    BE->>BE: Job progress updated
 ```
 
 ---
@@ -221,30 +221,116 @@ Backend runs on `http://localhost:8080`
 
 ---
 
-## API Overview
+## API Endpoints
 
-**Auth** — signup, OTP verify, login, refresh, logout (car owner + shop owner + admin)
+**Auth**
+```
+POST   /auth/signup
+POST   /auth/verify-otp
+POST   /auth/resend-otp
+POST   /auth/login
+POST   /auth/refresh
+POST   /auth/logout
+POST   /auth/shop/request-otp
+POST   /auth/shop/verify-otp
+POST   /admin/auth/login
+```
 
-**Leads** — post lead, nearby leads, my leads, cancel lead, lead detail
+**Users**
+```
+GET    /users/me
+POST   /users/fcm-token
+GET    /admin/users
+GET    /admin/users/counts
+GET    /admin/users/{id}
+POST   /admin/users/{id}/block
+POST   /admin/users/{id}/unblock
+```
 
-**Quotes** — submit quote, get quotes for lead, accept/reject quote, real-time via WebSocket
+**Shops**
+```
+POST   /shops/documents
+GET    /shops/my-status
+GET    /shops/credits
+POST   /shops/credits/purchase
+GET    /repair-shop/leads/nearby
+GET    /admin/shops
+GET    /admin/shops/counts
+GET    /admin/shops/{id}
+GET    /admin/shops/pending
+POST   /admin/shops/{id}/approve
+POST   /admin/shops/{id}/reject
+```
 
-**Payments** — initiate payment, mock pay, escrow release, payment status
+**Leads**
+```
+POST   /leads
+GET    /leads/my
+GET    /leads/{id}
+PATCH  /leads/{id}/cancel
+GET    /leads/{leadId}/chat-channel
+GET    /leads/{leadId}/progress
+POST   /leads/{leadId}/mark-work-done
+GET    /leads/{leadId}/accepted-detail
+GET    /admin/leads
+GET    /admin/leads/{id}
+```
 
-**Chat** — Firestore-based real-time chat, channel creation via backend
+**Quotes**
+```
+POST   /quotes
+GET    /leads/{id}/quotes
+POST   /leads/{leadId}/quotes/{quoteId}/accept
+GET    /quotes/my
+```
 
-**Admin** — user management, shop approval, lead oversight, analytics, activity logs, dashboard stats
+**Payments**
+```
+POST   /api/payments/initiate
+GET    /api/payments/{paymentId}/mock-pay
+GET    /api/payments/leads/{leadId}
+POST   /api/payments/{paymentId}/release-immediately
+```
 
-Full endpoint list is available in the project documentation.
+**Chat**
+```
+POST   /chat/notify
+```
+
+**Media**
+```
+POST   /media/presigned-url
+```
+
+**Dashboard**
+```
+GET    /admin/dashboard/stats
+GET    /admin/dashboard/recent-shops
+GET    /admin/analytics
+GET    /admin/analytics/export
+```
+
+**Activity**
+```
+GET    /admin/activity/recent
+GET    /admin/activity
+```
+
+**WebSocket**
+```
+Endpoint : /ws (STOMP over SockJS)
+Topic    : /topic/leads/{leadId}/quotes
+```
 
 ---
 
 ## Key Decisions
 
-- Payments are mocked (Stripe unavailable in Pakistan) with a custom escrow simulation
 - OTP via Gmail SMTP, not AWS SES
 - Geospatial lead matching via PostGIS
 - Chat via Firebase Firestore, not a third-party SDK
 - Admin tokens stored in httpOnly cookies, all admin API calls proxied through Next.js
 - JWT with rotating refresh tokens
 - User block revokes all refresh tokens and triggers FCM notification instantly
+
+---
